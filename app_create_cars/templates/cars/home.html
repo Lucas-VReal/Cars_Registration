@@ -1,6 +1,14 @@
-<html>
-    <head></head>
-    <body>
-        <h1> Hello World </h1>
-    </body>
-</html>
+{% extends 'cars/base.html' %}
+{% block content %}
+
+<form action=" {% url 'cars_list' %} " method="post">
+    {% csrf_token %}
+    <div>
+       <h1>Cars Registration</h1>
+       Name: <input name="name" class="form-control-sm" type="text">
+       Year: <input name="year" class="form-control-sm" type="number">
+       <button class="form-control-sm"> Create </button>    
+    </div>
+</form>
+
+{% endblock %}
