@@ -1,0 +1,24 @@
+{% extends 'cars/base.html' %}
+{% block content %}
+<div class="container">
+    <h1>Registred Cars:</h1>
+  
+      <table class="table table-bordered table-striped">
+          <tr>
+              <th>id</th>
+              <th>name</th>
+              <th>year</th>
+          </tr>
+          {% for car in cars %}
+          <tr>
+              <td>{{car.car_id}}</td>
+              <td>{{car.car_name}}</td>
+              <td>{{car.car_year}}</td>
+          </tr>
+          {% endfor %}
+      </table>
+
+      <button class="form-control-sm"> <a href="{% url 'home' %}" style="text-decoration: none; color: black;"> Back </a> </button>
+  </div>
+
+{% endblock %}
