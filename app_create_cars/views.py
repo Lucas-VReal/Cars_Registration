@@ -1,67 +1,70 @@
-from django.shortcuts import render
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
 from .models import Car
 from .forms import CarForm
 
 def home(request):
-    return render(request, 'cars/home.html')
+    return render(request, 'home.html')
+
 def create_new_car (request):
     #Save new car in database
-    new_car = Car()
-    new_car.car_name = request.POST.get('name')
-    new_car.car_year = request.POST.get('year')
-    new_car.save()
+    if(request.method == 'POST'):
+        form = CarForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True})
+    else:
+        form=CarForm()
+    return render(request,'create_car.html',{'form':form}) 
+    
 
 def get_all_cars(request):
     #show all cars
     cars = {
         'cars': Car.objects.all()
     }
-    return render(request, 'cars/cars.html', cars)
+    return render(request, 'cars.html', cars)
 
 def get_one_car(request):
     if(request.method == "POST"):
-        id = request.POST.get('id')
-        requested_car = Car.objects.filter(id = id)
-
-        if requested_car.exists():
-            car = requested_car.first
-            return render(request, 'find_car.html', {'car' : car})
-        else:
-            error_message = "No users found using the given parameters"
-            return render(request, 'find_car.html',  {'error': error_message})
-    return render(request,'find_car.html')
-
-
-def update_car (request):
-    if (request.method=="POST") :
-
-        id = int(request.POST['hidden-input'])
-
-        car = Car.objects.get(pk=id)
-        if(car.exists()): 
-            car.car_name = request.POST["name"]
-            car.car_year = request.POST["year"]
-
-            car.save()
-
-            return render(request, 'update_car.html', {'car': car})
-        else:
-            context = {"Error":"Car does not exist"}
-            return render(request,"update_car.html",context)
-            
-    return render(request,"update_car.html", {})
-
-def delete_car (request):
-    if (request.method== "POST") :
-        id = int(request.POST['deleteId'] )
-        car = Car.objects.get(pk=id)
-        
+        car_id = request.POST.get('car_id')
         try:
-          car.delete()
-          all_cars = Car.objects.all()
-          return render(request, 'cars.html',{'cars':all_cars})
+            car = Car.objects.get(car_id=car_id)
+            return render(request, 'find_car.html', {'car': car})
+        except Car.DoesNotExist:
+            error_message = "Car not found with the provided ID."
+            return render(request, 'find_car.html', {'error_message': error_message})
+    else:
+        return render(request, 'find_car.html')
+
+
+def update_car(request, car_id):
+    if request.method == "POST":
+        car = Car.objects.get(car_id=car_id)
+        form = CarForm(request.POST, instance=car)
+
+        if form.is_valid():
+            form.save()
+            return redirect('cars')
+        else:
+            form = CarForm(instance=car)
+
+    return render(request, "cars.html", {'form': form})
+
+def delete_car(request, car_id):
+    if request.method == "POST":
+        try:
+            car = Car.objects.get(pk=car_id)
+            car.delete()
+            all_cars = Car.objects.all()
+            return render(request, 'cars.html', {'cars': all_cars})
+        except Car.DoesNotExist:
+            error_message = "Car not found with the provided ID."
+            return render(request, 'cars.html', {'error_message': error_message})
         except Exception as e:
-           context={"Error":"Cannot delete this car!"+ str(e)}
-           return render(request,'cars.html',context)    
-    cars = Car.objects.all();
-    return render(request,'cars.html',{"cars":cars})
+            context = {"Error": "Cannot delete this car! " + str(e)}
+            return render(request, 'cars.html', context)
+    else:
+        cars = Car.objects.all()
+        return render(request, 'cars.html', {'cars': cars})
+
