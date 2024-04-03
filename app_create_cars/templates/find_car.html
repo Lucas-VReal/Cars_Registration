@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find a Car</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .user-details {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .user-details h2 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        .user-details p {
+            margin: 5px 0;
+            color: #777;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-left: 10px;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Find a Car</h1>
+    <div class="container">
+        {% if car %}
+            <!-- Show Car  -->
+            <div class="user-details">
+                <h2>Car Info: </h2>
+                <p><strong>ID: </strong> {{ car.car_id }}</p>
+                <p><strong>Name: </strong> {{ car.car_name }}</p>
+                <p><strong>Year: </strong> {{ car.car_year }}</p>
+
+                <form action="{% url 'delete_car' car.car_id %}" method="post" onsubmit="return confirm('Do you really want to delete this car?')">
+                    {% csrf_token %}
+                    <input type="hidden" name="deleteId" value="{{ car.car_id }}">
+                    <button type="submit" class="btn-danger">Delete Car</button>
+                </form>
+
+                <button type="button" class="btn-primary" onclick="openEditModal('{{ car.car_id }}', '{{ car.car_name }}', '{{ car.car_year }}')">Edit</button>
+            </div>
+        {% else %}
+            <!-- Show error message  -->
+            <p>{{ error_message }}</p>
+        {% endif %}
+
+        <!-- Form to query car by ID -->
+        <form action="{% url 'find_car' %}" method="post">
+            {% csrf_token %}
+            <label for="car_id">Car Id:</label>
+            <input type="number" id="car_id" name="car_id">
+            <button type="submit" class="btn-primary"> Find </button>
+        </form>
+    </div>
+
+    <!-- Car edit mode -->
+    <div id="editModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('editModal').style.display = 'none'">&times;</span>
+            <input type="hidden" id="edit-car-id">
+            <label for="edit-car-name">Car Name:</label>
+            <input type="text" id="edit-car-name">
+            <label for="edit-car-year">Car Year:</label>
+            <input type="number" id="edit-car-year">
+            <button type="button" onclick="updateCar()">Save</button>
+        </div>
+    </div>
+
+    <script>
+        
+        // Function to open the edit modal and fill in the form fields
+        function openEditModal(carId, carName, carYear) {
+            document.getElementById('edit-car-id').value = carId;
+            document.getElementById('edit-car-name').value = carName;
+            document.getElementById('edit-car-year').value = carYear;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        // Function to send form data for updating via AJAX
+        function updateCar() {
+            var carId = document.getElementById('edit-car-id').value;
+            var carName = document.getElementById('edit-car-name').value;
+            var carYear = document.getElementById('edit-car-year').value;
+
+            var formData = new FormData();
+            formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+            formData.append('car_id', carId);
+            formData.append('car_name', carName);
+            formData.append('car_year', carYear);
+
+            var url = '/update-car/'+ carId+ '/'
+
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Update successful, close the modal and refresh the page
+                    document.getElementById('editModal').style.display = 'none';
+                    window.location.reload();
+                } else {
+                    // Handle update errors if necessary
+                    console.error('Error updating car');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating car:', error);
+            });
+        }
+    </script>
+</body>
+</html>
